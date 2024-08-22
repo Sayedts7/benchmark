@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "288978044613",
+    "project_id": "benchmark-estimates",
+    "storage_bucket": "benchmark-estimates.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288978044613:android:ccc5007fb57082488f92ac",
+        "android_client_info": {
+          "package_name": "com.STInnovation.benchmark_estimate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "288978044613-s9n7m172rllhcca1i245m80l9qd3k08a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrUnFP1KYTcL6KgOydHjkHnKwEU-_hSgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "288978044613-s9n7m172rllhcca1i245m80l9qd3k08a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "288978044613-spisii98mv25l97qlhk6b2g69nd2t3js.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.STInnocation.benchmarkestimate.benchmarkEstimate"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288978044613:android:c301dd90ea9160fd8f92ac",
+        "android_client_info": {
+          "package_name": "com.StInnovation.benchmark_estimate_admin_panel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "288978044613-s9n7m172rllhcca1i245m80l9qd3k08a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrUnFP1KYTcL6KgOydHjkHnKwEU-_hSgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "288978044613-s9n7m172rllhcca1i245m80l9qd3k08a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "288978044613-spisii98mv25l97qlhk6b2g69nd2t3js.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.STInnocation.benchmarkestimate.benchmarkEstimate"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
