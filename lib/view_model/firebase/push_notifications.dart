@@ -158,17 +158,7 @@ class NotificationServices with ChangeNotifier{
 
     final client = await clientViaServiceAccount(
       ServiceAccountCredentials.fromJson({
-        "type": "service_account",
-        "project_id": "benchmark-estimates",
-        "private_key_id": "dbe1827f98dd40a4a9916986580ed2b88264d9da",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDXSCefLxvfHIRG\nZBIP+omYgznsf2k+1I2x9VxKbNTWhppMRRBK2OEynvytZf4TIm+lxySg7mr0WUYE\n8sTILfuBCoy4/aXysYz/chJmOID9jOF4rzdhjj2jT7x4+yF9DS+V+w1H4r0RbPP/\n2J/QGXwUa1rFfYczp+0sE5Hb0YvMpOYx0mOaCiVhg4Ktek6MyVCsXxbS7XCu5KTU\nC5pj/BqvRdp3sc8a3u0KNj19fKONnGwmVk5kD8pffFzw2cRZu7sjfM4pYEdjFsot\nuNsh5Pj4S6XJu24KA9QJW+vT79Nw8X0sttxq/dfsq7lRRfdEuZSOZV7ytMQcjOz3\n3zqmehMzAgMBAAECggEASLj4nXbh8OfmrQqf6WLmOS1XE1Nk/5L4vJ1YTFHgQgmd\nNNd9rfL+e8WmMIMMJXWUBomzj2OKoLlJhGFn5QFXfNtN9y3D8axVp3Lm0T4UINKG\n1ehGin9sxe6pCas3wFEEeqMgdOCcorbN4+bO8ZKyTgmH07/YPLRk02dW9c0e7wVE\nnEQL/tVt7pqcvZDocEMxbwSM8jWnrzpH4babqviY+LgBB/+eVIbNtQBIDB4L0RLD\nksvywy4fmCHwnjpF2ZWTWHXP/+sYMzXNVfNCBMyWIas6PFNbdayqhEGHiTF6nqhG\nOZYrH6D8uIyAvavggJW8y1LTTeyjbeYmGv2Clc4xsQKBgQDqx5/mi23LV+1VFJ6o\ni+eFog6PWTta/cXAlMTUzk93DFjL+UBVgF9JTho/6PcPgMkylVhc0zS1+L8JLDMq\nTxOcLpcXvsV7bcOZ1lNaPN0J8i9A1tORQDhIcr2sA0Oa4eM25aAqsWHNYfk8nmZa\nkJY6HCKb+3f++8ss6U0z5H3xYwKBgQDqvWI5xSMAJc6Xv6J74ZVs0WMnGgMB/qSp\n1vSzZmk3730YZG3l5/wILZ4QENFGMPRbyzhVSd5NgUoDL35diu6l3ktkNtJqhSoE\nJ3J0ffgw0U650avDZ+b7wAPjv80jh2VoSC7BbkKTWw77EDgQy+j26A06AQbPcrCI\nMo+ImHln8QKBgBu4ej7EU7Bgr1sOVjVcX3e9zK5MQN/bes/kQOFHgsZxpMJgqaHu\nyFFlcV/+Z71i3V6ll4tOPLkHp7azi08BizUzow9grPyH10KAtdK/wPF9sOqc8toB\nlSOouJBoykCtTyCaODESRJP1b3Ii2b7zt2khDU0RgfePT0v8N+tanSw1AoGBAL1c\nsVRxF18TIKmByg2tWOFDuHzemvaM+UCZSyU9xDt/UqbOvWjtz365bfz/1BKPg1BZ\ni8QhptdXKOGQ+ptzbDkaLi9VmkCb090uBUK8K+8VqjB0V992ffswVvLu0wmKO9/3\n+t/HlqVQm7Ek0FWcaP5lC+Zy1Y+bsZTtVKSYe7fBAoGAO2VdhAtXtp5koMvcFYHi\nupUjYaNWA4K8b77+I+qsE5cqu0xlwgcmnqU6HcBjCfVb1TyZwRkQwcg5lyPR8vOs\nliCUWigf2mA1yeMe/CoKwE9GoWfwNWCkI5zRkFH24HMu+jtSeDfVN4sf1Neiwvuu\npffOZAWtFo37MguQNNsia/E=\n-----END PRIVATE KEY-----\n",
-        "client_email": "firebase-adminsdk-xl6qk@benchmark-estimates.iam.gserviceaccount.com",
-        "client_id": "115794491112301104369",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xl6qk%40benchmark-estimates.iam.gserviceaccount.com",
-        "universe_domain": "googleapis.com"
+      *********************
       }
       ),
       scopes,
