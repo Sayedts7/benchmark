@@ -136,10 +136,10 @@ class NotificationView extends StatelessWidget {
                                                       style: AppTextStyles
                                                           .label12400BTC,
                                                     ),
-                                                    IconButton(
-                                                        onPressed: () {},
-                                                        icon: Icon(Icons
-                                                            .more_horiz_outlined))
+                                                    // IconButton(
+                                                    //     onPressed: () {},
+                                                    //     icon: Icon(Icons
+                                                    //         .more_horiz_outlined))
                                                   ],
                                                 )
                                               ],

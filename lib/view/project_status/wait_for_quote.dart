@@ -1,3 +1,4 @@
+
 import 'package:benchmark_estimate/utils/constants/image_path.dart';
 import 'package:benchmark_estimate/utils/custom_widgets/custom_button.dart';
 import 'package:benchmark_estimate/view/create_project/create_project_view.dart';
@@ -24,13 +25,15 @@ class WaitForQuoteView extends StatefulWidget {
   final String price;
   final String message;
   final Timestamp date;
-   final bool paid;
+  final bool paid;
+  final List<dynamic> files;
 
   final String projectName;
-final Map<String, dynamic> categories;
+  final Map<String, dynamic> categories;
   final String docId;
 
   const WaitForQuoteView({super.key, required this.docId,
+    required this.files,
     required this.price,
     required this.userId,
     required this.userName,
@@ -140,9 +143,9 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  projectData['status'] == 'Project Submitted'?
+                                  projectData['status'] == 'Requirements Submitted'?
                                   SvgPicture.asset(statusZero):
-                                  projectData['status'] == 'Wait for quote'?
+                                  projectData['status'] == 'Quote Submitted'?
                                   AnimatedBuilder(
                                     animation: _controller,
                                     builder: (context, child) {
@@ -157,7 +160,7 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                                       );
                                     },
                                   ):
-                                  projectData['status'] == 'Wait for delivery' ||  projectData['status'] == 'Completed'?
+                                  projectData['status'] == 'Project Started' ||  projectData['status'] == 'Completed'?
                                   SvgPicture.asset(statusComplete):
                                   SvgPicture.asset(statusComplete),
                                   // SvgPicture.asset(statusZero),
@@ -168,18 +171,18 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                               ),
                               InkWell(
                                 onTap:(){
-                                  if(projectData['status'] == 'Wait for delivery'|| projectData['status'] == 'Completed'){
+                                  if(projectData['status'] == 'Project Started'|| projectData['status'] == 'Completed'){
                                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> WaitForDeliveryView(docId: projectData['id'],)));
                                   }
                                 },
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    projectData['status'] == 'Project Submitted'?
+                                    projectData['status'] == 'Requirements Submitted'?
                                     SvgPicture.asset(statusZero):
-                                    projectData['status'] == 'Wait for quote'?
+                                    projectData['status'] == 'Quote Submitted'?
                                     SvgPicture.asset(statusZero) :
-                                    projectData['status'] == 'Wait for delivery' ?
+                                    projectData['status'] == 'Project Started' ?
                                     AnimatedBuilder(
                                       animation: _controller,
                                       builder: (context, child) {
@@ -210,11 +213,11 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                           SizedBox(
                             height: MySize.size12,
                           ),
-                           Text(adminMessage, style: AppTextStyles.label14500BTC,),
+                          Text(adminMessage, style: AppTextStyles.label14500BTC,),
                           SizedBox(
                             height: MySize.size20,
                           ),
-                           Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('Total Amount', style: AppTextStyles.label14700B,),
@@ -224,7 +227,7 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                           SizedBox(
                             height: MySize.size22,
                           ),
-                           Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('Date', style: AppTextStyles.label14700B,),
@@ -285,12 +288,12 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
             }),
       ),
       bottomNavigationBar: widget.paid?
-          Container(
-            height: 1,
+      Container(
+        height: 1,
 
 
-          ):
-       Padding(
+      ):
+      Padding(
         padding: kIsWeb
             ? EdgeInsets.symmetric(
             vertical: MySize.size20, horizontal: MySize.screenWidth * 0.2)
@@ -311,48 +314,78 @@ class _WaitForQuoteViewState extends State<WaitForQuoteView> with SingleTickerPr
                         message: widget.message,
                         id: widget.docId,
                         preview: true,
+                        files: widget.files,
                         categories: widget.categories,
                       )));
                   // Navigator.of(context).pop();
                 }),
             CustomButton8(text: 'Pay', onPressed: (){
-              final loadingProvider = Provider.of<LoaderViewProvider>(context, listen: false);
-              loadingProvider.changeShowLoaderValue(true);
-              var id = DateTime.now().millisecondsSinceEpoch.toString();
-              FirebaseFirestore.instance.collection('Projects').doc(widget.docId).update({
-                'status': 'Wait for delivery',
-                'paid': true,
-              }).then((value) {
-                FirebaseFirestore.instance.collection('Payments').doc(
-                    id).set({
-                  'id': id,
-                  'userId':widget.userId ?? '',
-                  'projectId': widget.docId ?? '',
-                  'projectName': widget.projectName?? '',
-                  'price':widget.price ?? '',
-                  'userName':widget.userName ?? '',
-                  'paid': true,
-                }).then((value) {
-                  FirestoreService().setNotifications('admin', 'Payment', '${widget.userName} has paid for the project with ID $id',widget.docId);
-                  loadingProvider.changeShowLoaderValue(false);
-                  Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (context) =>
-                      WaitForDeliveryView(docId: widget.docId,)));
-                  Utils.toastMessage('Payment Successful');
-                }).onError((error, stackTrace) {
-                  loadingProvider.changeShowLoaderValue(false);
-                  Utils.toastMessage(error.toString());
-                });
-              }).onError((error, stackTrace) {
-                loadingProvider.changeShowLoaderValue(false);
-                Utils.toastMessage(error.toString());
-              });
-            },
+              _showPaymentDialog(context);
+
+           },
               width:kIsWeb ? MySize.scaleFactorWidth * 100:MySize.scaleFactorWidth * 160,
               height: MySize.size50,)
           ],
         ),
       ),
+    );
+  }
+  void _showPaymentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Proceed to Payment'),
+          content: Text('Do you want to proceed to pay?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Proceed to Pay'),
+              onPressed: () async{
+                // Implement your payment logic here
+                // _proceedToPay();
+                final loadingProvider = Provider.of<LoaderViewProvider>(context, listen: false);
+                loadingProvider.changeShowLoaderValue(true);
+                var id = DateTime.now().millisecondsSinceEpoch.toString();
+               await FirebaseFirestore.instance.collection('Projects').doc(widget.docId).update({
+                  'status': 'Project Started',
+                  'paid': true,
+                }).then((value) {
+                  FirebaseFirestore.instance.collection('Payments').doc(
+                      id).set({
+                    'id': id,
+                    'userId':widget.userId ?? '',
+                    'projectId': widget.docId ?? '',
+                    'projectName': widget.projectName?? '',
+                    'price':widget.price ?? '',
+                    'userName':widget.userName ?? '',
+                    'paid': true,
+                  }).then((value) {
+                    FirestoreService().setNotifications('admin', 'Payment', '${widget.userName} has paid for the project with ID $id',widget.docId);
+                    loadingProvider.changeShowLoaderValue(false);
+                    Navigator.pushReplacement(
+                        context, MaterialPageRoute(builder: (context) =>
+                        WaitForDeliveryView(docId: widget.docId,)));
+                    Utils.toastMessage('Payment Successful');
+                  }).onError((error, stackTrace) {
+                    loadingProvider.changeShowLoaderValue(false);
+                    Utils.toastMessage(error.toString());
+                  });
+                }).onError((error, stackTrace) {
+                  loadingProvider.changeShowLoaderValue(false);
+                  Utils.toastMessage(error.toString());
+                });
+
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

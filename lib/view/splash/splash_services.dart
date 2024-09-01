@@ -18,7 +18,7 @@ print('--------------------------');
     final auth = FirebaseAuth.instance;
     final user = auth.currentUser;
 final SharedPreferences prefs = await SharedPreferences.getInstance();
-
+print('=========================================${prefs.getBool('rememberMe')}');
 if(prefs.getBool('rememberMe') == false || prefs.getBool('rememberMe') == null) {
   await AuthServices().signOut();
   Timer(const Duration(seconds: 1), () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> LoginView())));

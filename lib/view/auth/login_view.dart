@@ -244,9 +244,15 @@ class _LoginViewState extends State<LoginView> {
                                       image: facebook,
                                     ),
 
-                                    CircularContainer(
-                                      color: blackColor,
-                                      image: apple,
+                                    InkWell(
+                                      onTap: () {
+                                        print('hello');
+                                        AuthServices().handleAppleSignIn(context);},
+
+                                      child: CircularContainer(
+                                        color: blackColor,
+                                        image: apple,
+                                      ),
                                     ),
 
                                   ],
@@ -475,16 +481,31 @@ class _LoginViewState extends State<LoginView> {
                                 image: google,
                               ),
                             ),
-                            CircularContainer(
-                              color: const Color(0xff4167B2),
-                              image: facebook,
+                            InkWell(
+                              onTap: () {
+                                Utils.toastMessage('Under Development');
+                                print('hello');
+                                // AuthServices().handleAppleSignIn(context);},
+                              },
+                              child: CircularContainer(
+                                color: const Color(0xff4167B2),
+                                image: facebook,
+                              ),
                             ),
-                  
-                            CircularContainer(
-                              color: blackColor,
-                              image: apple,
+
+                            InkWell(
+                              onTap: () {
+                                Utils.toastMessage('Under Development');
+                                print('hello');
+                                // AuthServices().handleAppleSignIn(context);},
+                              },
+                              child: CircularContainer(
+                                color: blackColor,
+                                image: apple,
+                              ),
                             ),
-                  
+
+
                           ],
                         ),
                       ),

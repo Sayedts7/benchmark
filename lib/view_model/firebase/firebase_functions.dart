@@ -25,7 +25,8 @@ class FirestoreService {
     try {
       print('Checking email: $email');
       final QuerySnapshot<Map<String, dynamic>> querySnapshot = await _db
-          .collection('User')
+          .collection('User').
+    where('email', isEqualTo: email)
           .where('signUpWith', isEqualTo: 'email')
           .limit(1) // Limiting to 1 document for efficiency
           .get();

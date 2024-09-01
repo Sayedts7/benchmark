@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
-
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+import 'dart:math';
 import '../../utils/common_function.dart';
 import '../../utils/utils.dart';
 import '../../view/home/home_view.dart';
@@ -177,6 +180,85 @@ class AuthServices{
       CommonFunctions.showNoInternetDialog(context);
     }
   }
+  String generateNonce([int length = 32]) {
+    final charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+
+  String sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  Future<UserCredential?> signInWithApple() async {
+    final rawNonce = generateNonce();
+    final nonce = sha256ofString(rawNonce);
+
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      return await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+    } catch (e) {
+      print("Error during Apple Sign In: $e");
+      return null;
+    }
+  }
+
+  Future<void> handleAppleSignIn(BuildContext context) async {
+    final obj = Provider.of<LoaderViewProvider>(context, listen: false);
+    print('1111111111111111111111111111');
+    bool isConnected = await Utils.checkInternetConnection();
+
+    obj.changeShowLoaderValue(true);
+
+    if (isConnected) {
+      try {
+        final UserCredential? userCredential = await signInWithApple();
+        if (userCredential != null) {
+          final userDocument = firestore.doc(userCredential.user!.uid);
+          final userSnapshot = await userDocument.get();
+
+          if (!userSnapshot.exists) {
+            String displayName = userCredential.user?.displayName ?? "Apple User";
+
+            await setData(
+                userCredential.user!.email ?? '',
+                displayName,
+                'apple',
+                userCredential.user!.phoneNumber ?? '',
+                ''
+            );
+          }
+
+          obj.changeShowLoaderValue(false);
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeView()));
+        } else {
+          obj.changeShowLoaderValue(false);
+          Utils.toastMessage('Apple Sign In failed');
+        }
+      } catch (e) {
+        obj.changeShowLoaderValue(false);
+        Utils.toastMessage('Error during Apple Sign In: $e');
+      }
+    } else {
+      obj.changeShowLoaderValue(false);
+      CommonFunctions.showNoInternetDialog(context);
+    }
+  }
+
 
   Future<void> setData(String email, String name, String type, String phone, String password) async {
     final DocumentReference parentDocument = firestore.doc(FirebaseAuth.instance.currentUser!.uid);

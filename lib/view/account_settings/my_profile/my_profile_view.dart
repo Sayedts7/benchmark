@@ -37,7 +37,7 @@ class MyProfileView extends StatelessWidget {
             actions: [
               Consumer<UserProfileProvider>(
                 builder: (context, provider, _) {
-                  return provider.isEditing ?Icon(Icons.circle, color: whiteColor,): IconButton(
+                  return provider.isEditing ?IconButton(onPressed:  provider.toggleEditing, icon: Icon(Icons.close, color: blackColor,)): IconButton(
                     icon: Icon( Icons.edit, color: blackColor,),
                     onPressed:  provider.toggleEditing,
                   );
@@ -110,24 +110,28 @@ class MyProfileView extends StatelessWidget {
               ),
               Consumer<LoaderViewProvider>(
                 builder: (context, loadingProvider, child){
-                  return CustomButton8(text: 'Update', onPressed: ()async{
-                  loadingProvider.changeShowLoaderValue(true);
+                  return Visibility(
+                    visible: provider.isEditing,
+                    child: CustomButton8(text: 'Update', onPressed: ()async{
+                    loadingProvider.changeShowLoaderValue(true);
 
-                  print('0000000000000000222222222222222');
-                  await FirebaseFirestore.instance.collection('User').doc(FirebaseAuth.instance.currentUser!.uid).update({
-                  'name': provider.name,
-                  }).then((value) {
-                  loadingProvider.changeShowLoaderValue(false);
+                    print('0000000000000000222222222222222');
+                    await FirebaseFirestore.instance.collection('User').doc(FirebaseAuth.instance.currentUser!.uid).update({
+                    'name': provider.name,
+                    }).then((value) {
+                      provider.toggleEditing();
+                    loadingProvider.changeShowLoaderValue(false);
 
-                  Utils.toastMessage('Updated');
-                  }).onError((error, stackTrace) {
-                  Utils.toastMessage(error.toString());
-                  loadingProvider.changeShowLoaderValue(false);
+                    Utils.toastMessage('Updated');
+                    }).onError((error, stackTrace) {
+                    Utils.toastMessage(error.toString());
+                    loadingProvider.changeShowLoaderValue(false);
 
 
 
-                  }
-                  );              });
+                    }
+                    );              }),
+                  );
                 },
               )
             ],

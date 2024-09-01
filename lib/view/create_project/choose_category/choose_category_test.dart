@@ -51,11 +51,14 @@
                         children: [
                           SizedBox(width: 60,),
                           Text('Category', style: AppTextStyles.label14700B,),
-                          TextButton(onPressed: (){
-                            setState(() {
-                              categoryProvider.unselectAllSubCategorySelection(categoryIndex);
-                            });
-                            }, child: Text('Unselect all'))
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  categoryProvider.toggleAllSubCategorySelection(categoryIndex);
+                                });
+                              },
+                              child: Text(categoryProvider.areAllSubCategoriesSelected(categoryIndex) ? 'Unselect all' : 'Select all')
+                          )
                         ],
                       ),
                       ...List.generate(subCategoryList.length, (index) {
@@ -79,8 +82,7 @@
           );
         },
       );
-    }
-  TextEditingController hoursController = TextEditingController();
+    }  TextEditingController hoursController = TextEditingController();
     TextEditingController daysController = TextEditingController();
 
     @override

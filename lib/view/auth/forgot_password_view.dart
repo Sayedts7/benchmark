@@ -169,9 +169,9 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         isConnected = await Utils.checkInternetConnection();
       }
       if (isConnected == true) {
-
+        print(email);
         bool? emailExist = await FirestoreService().checkEmailExists(email);
-        Utils.toastMessage(emailExist.toString());
+        // Utils.toastMessage(emailExist.toString());
 
         //check if user email is valid
         if (emailExist == true) {

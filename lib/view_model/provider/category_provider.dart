@@ -31,26 +31,39 @@ class CategoryProvider with ChangeNotifier {
       sch = true;
     } else {
       selectedCategoryIndexes.removeWhere((element) => categories[element] == 'Scheduling');
-      if (selectedCategoryIndexes.contains(index)) {
-        selectedCategoryIndexes.remove(index);
-      } else {
-        selectedCategoryIndexes.add(index);
-      }
+      updateSelectedCategoryIndexes(index);
       sch = false;
     }
     notifyListeners();
   }
 
-  void toggleSubCategorySelection(int categoryIndex, int subCategoryIndex) {
-    selectedOptions[categoryIndex][subCategoryIndex] = !selectedOptions[categoryIndex][subCategoryIndex];
+  void toggleAllSubCategorySelection(int categoryIndex) {
+    bool allSelected = selectedOptions[categoryIndex].every((element) => element);
+    for (int i = 0; i < selectedOptions[categoryIndex].length; i++) {
+      selectedOptions[categoryIndex][i] = !allSelected;
+    }
+    updateSelectedCategoryIndexes(categoryIndex);
     notifyListeners();
   }
 
-  void unselectAllSubCategorySelection(int categoryIndex) {
-    for (int i = 0; i < selectedOptions[categoryIndex].length; i++) {
-      selectedOptions[categoryIndex][i] = false;
-    }
+  void toggleSubCategorySelection(int categoryIndex, int subCategoryIndex) {
+    selectedOptions[categoryIndex][subCategoryIndex] = !selectedOptions[categoryIndex][subCategoryIndex];
+    updateSelectedCategoryIndexes(categoryIndex);
     notifyListeners();
+  }
+
+  void updateSelectedCategoryIndexes(int categoryIndex) {
+    if (selectedOptions[categoryIndex].contains(true)) {
+      if (!selectedCategoryIndexes.contains(categoryIndex)) {
+        selectedCategoryIndexes.add(categoryIndex);
+      }
+    } else {
+      selectedCategoryIndexes.remove(categoryIndex);
+    }
+  }
+
+  bool areAllSubCategoriesSelected(int categoryIndex) {
+    return selectedOptions[categoryIndex].every((element) => element);
   }
 
   void updateTextControllers(String hour, String day) {
@@ -59,7 +72,6 @@ class CategoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Method to get selected categories and their subcategories
   Map<String, dynamic> getSelectedCategoriesWithSubcategories() {
     Map<String, dynamic> selectedData = {};
     for (int i = 0; i < selectedCategoryIndexes.length; i++) {
@@ -139,7 +151,6 @@ class CategoryProvider with ChangeNotifier {
     }
   }
 
-  //function for preview
   void setPreviewCategories(Map<String, dynamic> previewCategories) {
     selectedCategoryIndexes.clear();
     for (int i = 0; i < categories.length; i++) {
@@ -161,7 +172,6 @@ class CategoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-   //function to validate if category is selected or not at time of add project
   bool hasValidSelection() {
     if (selectedCategoryIndexes.isEmpty) {
       return false;
@@ -182,4 +192,32 @@ class CategoryProvider with ChangeNotifier {
     return false;
   }
 
+  void setSelectedCategoriesFromMap(Map<String, dynamic>? categoryMap) {
+    if (categoryMap == null) return;
+
+    selectedCategoryIndexes.clear();
+    sch = false;
+    hours.clear();
+    days.clear();
+
+    categoryMap.forEach((category, value) {
+      int categoryIndex = categories.indexOf(category);
+      if (categoryIndex != -1) {
+        selectedCategoryIndexes.add(categoryIndex);
+
+        if (category == 'Scheduling') {
+          sch = true;
+          hours.text = value['workingHours'] ?? '';
+          days.text = value['workingDays'] ?? '';
+        } else {
+          List<String> selectedSubcats = (value as List<dynamic>).cast<String>();
+          for (int j = 0; j < subCategories[category]!.length; j++) {
+            selectedOptions[categoryIndex][j] = selectedSubcats.contains(subCategories[category]![j]);
+          }
+        }
+      }
+    });
+
+    notifyListeners();
+  }
 }

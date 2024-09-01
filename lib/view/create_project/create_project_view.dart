@@ -34,11 +34,12 @@ import 'choose_category/choose_category_test.dart';
 class CreateProjectView extends StatefulWidget {
   final String? projectName;
   final Timestamp? date;
- final String? message;
- final String? id;
- final Map<String, dynamic>? categories;
- final bool preview;
-   const CreateProjectView({super.key, this.projectName, this.date, this.message, required this.preview, this.categories, this.id});
+  final List<dynamic>? files;
+  final String? message;
+  final String? id;
+  final Map<String, dynamic>? categories;
+  final bool preview;
+  const CreateProjectView({super.key, this.projectName, this.date, this.message, required this.preview, this.categories, this.id, this.files});
 
   @override
   State<CreateProjectView> createState() => _CreateProjectViewState();
@@ -59,26 +60,64 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   @override
   void initState() {
     // TODO: implement initState
-   if(widget.preview){
-     projectNameController.text = widget.projectName!;
-     messageController.text = widget.message!;
-     if (widget.date != null) {
-       // DateTime date = widget.date!.toDate();
-       String formattedDate = DateFormat('yyyy-MM-dd').format(widget.date!.toDate());
-
-           deadlineController.text = formattedDate;
-     }
-   }
-   if (widget.preview && widget.categories != null) {
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-       setPreviewCategories();
-     });
-   }
     super.initState();
+    if(widget.preview){
+      projectNameController.text = widget.projectName!;
+      messageController.text = widget.message!;
+      if (widget.date != null) {
+        // DateTime date = widget.date!.toDate();
+        String formattedDate = DateFormat('yyyy-MM-dd').format(widget.date!.toDate());
+
+        deadlineController.text = formattedDate;
+      }
+    }
+    if (widget.preview && widget.categories != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setPreviewCategories();
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExistingProject();
+    });
+
   }
-  void setPreviewCategories() {
+  void setPreviewCategories()async {
+    final loaderProvider =  Provider.of<LoaderViewProvider>(context, listen: false);
+    loaderProvider.changeShowLoaderValue(true);
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-    categoryProvider.setPreviewCategories(widget.categories!);
+    await categoryProvider.fetchCategories().then((value) {
+      categoryProvider.setPreviewCategories(widget.categories!);
+      loaderProvider.changeShowLoaderValue(false);
+    }).onError((error, stackTrace) {
+      loaderProvider.changeShowLoaderValue(false);
+      Utils.toastMessage(error.toString());
+
+    });
+  }
+
+  void setExistingFiles() {
+    if (widget.preview && widget.files != null && widget.files!.isNotEmpty) {
+      final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+      fileProvider.setExistingFileUrls(widget.files!);
+    }
+  }
+  Future<void> _loadExistingProject() async {
+    final projectDoc = await FirebaseFirestore.instance.collection('Projects').doc(widget.id).get();
+    final projectData = projectDoc.data() as Map<String, dynamic>;
+
+    setState(() {
+      projectNameController.text = projectData['projectName'] ?? '';
+      deadlineController.text = (projectData['deadLine'] as Timestamp?)?.toDate().toString() ?? '';
+      messageController.text = projectData['message'] ?? '';
+    });
+
+    final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+    final existingFileUrls = (projectData['fileUrls'] as List<dynamic>?)?.cast<String>() ?? [];
+    fileProvider.setExistingFileUrls(existingFileUrls);
+
+    // Load categories and subcategories
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    categoryProvider.setSelectedCategoriesFromMap(projectData['category'] as Map<String, dynamic>?);
   }
   @override
   Widget build(BuildContext context) {
@@ -181,10 +220,10 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                                   icon: Icon(Icons.calendar_month),
                                   onPressed: ()async{
                                     await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime(2101),
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime.now(),
+                                      lastDate: DateTime(2101),
                                     ).then((value) {
                                       deadlineController.text = value.toString().replaceRange(11, 23, '');
                                     });
@@ -271,7 +310,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                                     children: [
                                       InkWell(
                                         onTap: () async {
-                                          await filePickerProvider.pickFiles();
+                                          await Provider.of<FilePickerProvider>(context, listen: false).pickFiles();
                                         },
                                         child: DottedBorder(
                                           borderType: BorderType.RRect,
@@ -287,166 +326,160 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                                             child: Padding(
                                               padding: const EdgeInsets.all(10.0),
                                               child: Row(
-                                                mainAxisAlignment: MainAxisAlignment
-                                                    .center,
+                                                mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
                                                   SvgPicture.asset(upload),
-                                                  SizedBox(width: 10,),
-                                                  Text('Upload File',
-                                                    style: AppTextStyles
-                                                        .label14700P,)
+                                                  SizedBox(width: 10),
+                                                  Text('Upload File', style: AppTextStyles.label14700P)
                                                 ],
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(height: 20),
-                                      if (kIsWeb)
-                                        Wrap(
-                                          children: filePickerProvider.webFiles
-                                              .map((file) {
-                                            return Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                Container(
-                                                  margin: EdgeInsets.all(10),
-                                                  padding: EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.grey),
-                                                    borderRadius: BorderRadius
-                                                        .circular(5),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize
-                                                        .min,
-                                                    children: [
-                                                      SvgPicture.asset(uFile),
-                                                      SizedBox(width: 10),
-                                                      SizedBox(
-                                                        width: MySize.size80,
-                                                        child: Text(
-                                                          file.name,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: TextStyle(
-                                                              fontSize: 14),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Positioned(
-                                                  right: 2,
-                                                  top: 2,
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      filePickerProvider
-                                                          .removeWebFile(file);
-                                                    },
-                                                    child: SvgPicture.asset(
-                                                      close, width: 20,
-                                                      height: 20,),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
-                                        )
-                                      else
-                                        Wrap(
-                                          children: filePickerProvider.files.map((
-                                              file) {
-                                            return Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                Container(
-                                                  margin: EdgeInsets.all(10),
-                                                  padding: EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.grey),
-                                                    borderRadius: BorderRadius
-                                                        .circular(5),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize
-                                                        .min,
-                                                    children: [
-                                                      SvgPicture.asset(uFile),
-                                                      SizedBox(width: 10),
-                                                      SizedBox(
-                                                        width: MySize.size80,
-                                                        child: Text(
-                                                          file.path
-                                                              .split('/')
-                                                              .last,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: TextStyle(
-                                                              fontSize: 14),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Positioned(
-                                                  right: 2,
-                                                  top: 2,
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      filePickerProvider
-                                                          .removeFile(file);
-                                                    },
-                                                    child: SvgPicture.asset(
-                                                      close, width: 20,
-                                                      height: 20,),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
-                                        ),
+                                      // Wrap(
+                                      //     children: [
+                                      //       ...filePickerProvider.existingFileUrls.map((url) {
+                                      //         return Stack(
+                                      //             clipBehavior: Clip.none,
+                                      //             children: [
+                                      //               Container(
+                                      //                 margin: EdgeInsets.all(10),
+                                      //                 padding: EdgeInsets.all(10),
+                                      //                 decoration: BoxDecoration(
+                                      //                   border: Border.all(color: Colors.grey),
+                                      //                   borderRadius: BorderRadius.circular(5),
+                                      //                 ),
+                                      //                 child: Row(
+                                      //                   mainAxisSize: MainAxisSize.min,
+                                      //                   children: [
+                                      //                     SvgPicture.asset(uFile),
+                                      //                     SizedBox(width: 10),
+                                      //                     SizedBox(
+                                      //                       width: MySize.size80,
+                                      //                       child: Text(
+                                      //                         url.split('/').last,
+                                      //                         overflow: TextOverflow.ellipsis,
+                                      //                         style: TextStyle(fontSize: 14),
+                                      //                       ),
+                                      //                     ),
+                                      //                   ],
+                                      //                 ),
+                                      //               ),
+                                      //               Positioned(
+                                      //                 right: 2,
+                                      //                 top: 2,
+                                      //                 child: InkWell(
+                                      //                   onTap: () {
+                                      //                     filePickerProvider.removeExistingFileUrl(url);
+                                      //                   },
+                                      //                   child: SvgPicture.asset(close, width: 20, height: 20),
+                                      //                 ),
+                                      //               ),
+                                      //             ]);})]),
+                                      // SizedBox(height: 20),
+                                  Wrap(
+                                  children: filePickerProvider.getAllFiles().map((file) {
+                                  String fileName;
+                                  VoidCallback onRemove;
+                                  int i = 1;
+                                  print(i);
+
+                                  if (file is File) {
+                                  fileName = file.path.split('/').last;
+                                  onRemove = () => filePickerProvider.removeFile(file);
+                                  } else if (file is PlatformFile) {
+                                  fileName = file.name;
+                                  onRemove = () => filePickerProvider.removeFile(file);
+                                  } else if (file is String) {
+                                  fileName = file.split('/').last;
+                                  onRemove = () => filePickerProvider.removeExistingFileUrl(file);
+                                  } else {
+                                  return SizedBox.shrink(); // Skip if file type is unknown
+                                  }
+                                  i++;
+
+                                  return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+
+                                  Container(
+                                  margin: EdgeInsets.all(10),
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                  SvgPicture.asset(uFile),
+                                  SizedBox(width: 10),
+                                  SizedBox(
+                                  width: MySize.size80,
+                                  child: Text(
+                                  fileName,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 14),
+                                  ),
+                                  ),
+                                  ],
+                                  ),
+                                  ),
+                                  Positioned(
+                                  right: 2,
+                                  top: 2,
+                                  child: InkWell(
+                                  onTap: onRemove,
+                                  child: SvgPicture.asset(
+                                  close,
+                                  width: 20,
+                                  height: 20,
+                                  ),
+                                  ),
+                                  ),
+                                  ],
+                                  );
+                                  }).toList(),
+                                  ),
                                     ],
                                   );
                                 },
-                              ), SizedBox(
+                              ),
+                              SizedBox(
                                 height: MySize.size26,
                               ),
-                              CustomButton8(text: 'Submit', onPressed: () {
-                                // print('hello');
-                                if (_createProjectkey.currentState!.validate()) {
-                                  if (!categoryProvider.hasValidSelection()) {
-                                    Utils.toastMessage('Please select at least one category and subcategory');
-                                  }else {
-                                  if(widget.preview){
-                                    final selectedData = categoryProvider.getSelectedCategoriesWithSubcategories();
+                              CustomButton8(
+                                  text: 'Submit',
+                                  onPressed: () {
+                                    if (_createProjectkey.currentState!.validate()) {
+                                      if (!categoryProvider.hasValidSelection()) {
+                                        Utils.toastMessage('Please select at least one category and subcategory');
+                                      } else {
+                                        final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+                                        final selectedData = categoryProvider.getSelectedCategoriesWithSubcategories();
 
-                                    //add update project function here
-                                    FirebaseFirestore.instance.collection('Projects').doc(widget.id).update({
-                                      'status': 'Project Submitted',
-                                      'price': '',
-                                      'projectName': projectNameController.text,
-                                      'deadLine': DateTime.parse(deadlineController.text.trim()),
-                                      'message': messageController.text,
-                                      // 'fileUrls': fileUrls,
-                                      'category': selectedData,
-
-
-                                    });
-
-                                  }else{
-                                    addProject(context,
-                                        projectNameController.text,
-                                        deadlineController.text,
-                                        messageController.text
-                                    );
+                                        if (widget.preview) {
+                                          updateProject(
+                                              context,
+                                              widget.id!,
+                                              projectNameController.text,
+                                              deadlineController.text,
+                                              messageController.text,
+                                              selectedData
+                                          );
+                                        } else {
+                                          addProject(
+                                              context,
+                                              projectNameController.text,
+                                              deadlineController.text,
+                                              messageController.text
+                                          );
+                                        }
+                                      }
+                                    }
                                   }
-                                  }
-                                }
-                              })
-                            ],
+                              )                            ],
                           ),
                         ),
                       ),
@@ -466,51 +499,58 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   void showCustomDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: SingleChildScrollView(
-            child: Container(
-              width: MySize.size335,
-              // height: 392,
-              decoration: BoxDecoration(
-                color: Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Image.asset(
-                    projectCreated, // Replace with your image URL
-                    width: MySize.size120,
-                    height: MySize.size120,
-                  ),
-                  SizedBox(height: MySize.size10),
-                  Text(
-                    'Congratulations',
-                    style: TextStyle(
-                        fontSize: MySize.size20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: MySize.size8),
-                  Text(
-                    'Order Successfully Placed',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: MySize.size16),
-                  CustomButton8(
-                    // width:120,
-                    height: 40,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> HomeView()));
-                    },
-                    text: 'Close',
-                  ),
-                ],
+        return WillPopScope(
+          onWillPop: () async {
+            // Return false to prevent dialog from being closed
+            return false;
+          },
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: SingleChildScrollView(
+              child: Container(
+                width: MySize.size335,
+                // height: 392,
+                decoration: BoxDecoration(
+                  color: Color(0xFFFFFFFF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Image.asset(
+                      projectCreated, // Replace with your image URL
+                      width: MySize.size120,
+                      height: MySize.size120,
+                    ),
+                    SizedBox(height: MySize.size10),
+                    Text(
+                      'Congratulations',
+                      style: TextStyle(
+                          fontSize: MySize.size20, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: MySize.size8),
+                    Text(
+                      'Order Successfully Placed',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: MySize.size16),
+                    CustomButton8(
+                      // width:120,
+                      height: 40,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> HomeView()));
+                      },
+                      text: 'Close',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -519,260 +559,112 @@ class _CreateProjectViewState extends State<CreateProjectView> {
     );
   }
 
-  void addProject(BuildContext context, String projectName, String deadline,
-      String message) async {
-    var docId = DateTime
-        .now()
-        .millisecondsSinceEpoch
-        .toString();
-    final fileProvider = Provider.of<FilePickerProvider>(
-        context, listen: false);
-    final categoryProvider = Provider.of<CategoryProvider>(
-        context, listen: false);
-    String? name = await  FirestoreService().fetchUserName();
+  void addProject(BuildContext context, String projectName, String deadline, String message) async {
+    final docId = DateTime.now().millisecondsSinceEpoch.toString();
+    final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    final name = await FirestoreService().fetchUserName();
 
+    if ((kIsWeb && fileProvider.webFiles.isEmpty) || (!kIsWeb && fileProvider.files.isEmpty)) {
+      Utils.toastMessage('Please add at least 1 file.');
+      return;
+    }
+
+    try {
+      showUploadProgressDialog(context, fileProvider);
+
+      final fileUrls = await uploadFiles(docId, fileProvider);
+      final selectedData = categoryProvider.getSelectedCategoriesWithSubcategories();
+
+      await saveProjectToFirestore(docId, projectName, deadline, message, fileUrls, name, selectedData);
+
+      Navigator.of(context).pop(); // Close the progress dialog
+      fileProvider.clearAll();
+      showCustomDialog(context);
+      Provider.of<CategoryProvider>(context, listen: false).resetSelections();
+    } catch (error) {
+      Navigator.of(context).pop(); // Close the dialog in case of error
+      Utils.toastMessage(error.toString());
+    }
+  }
+
+  Future<List<String>> uploadFiles(String docId, FilePickerProvider fileProvider) async {
     List<String> fileUrls = [];
+    final files = kIsWeb ? fileProvider.webFiles : fileProvider.files;
+    int totalFiles = files.length;
 
-   if(kIsWeb && fileProvider.webFiles.isNotEmpty){
-     try {
-       int totalFiles = kIsWeb ? fileProvider.webFiles.length : fileProvider
-           .files.length;
-       int uploadedFiles = 0;
+    for (int i = 0; i < totalFiles; i++) {
+      final file = files[i];
+      final fileName = kIsWeb ? (file as PlatformFile).name : (file as File).path.split('/').last;
+      final ref = FirebaseStorage.instance.ref().child('uploads/$docId/$fileName');
 
-       // Show the progress dialog
-       showDialog(
-         context: context,
-         barrierDismissible: false,
-         builder: (context) {
-           return AlertDialog(
-             content: Column(
-               mainAxisSize: MainAxisSize.min,
-               children: [
-                 ValueListenableBuilder<double>(
-                   valueListenable: fileProvider.uploadProgress,
-                   builder: (context, progress, child) {
-                     return Column(
-                       children: [
-                         CircularProgressIndicator(value: progress / 100),
-                         SizedBox(height: 20),
-                         Text('${progress.toStringAsFixed(2)}% uploaded'),
-                       ],
-                     );
-                   },
-                 ),
-               ],
-             ),
-           );
-         },
-       );
+      UploadTask uploadTask;
+      if (kIsWeb) {
+        uploadTask = ref.putData((file as PlatformFile).bytes!);
+      } else {
+        uploadTask = ref.putFile(file as File);
+      }
 
-       if (kIsWeb) {
-         // For web
-         for (var file in fileProvider.webFiles) {
-           String fileName = file.name;
-           var ref = FirebaseStorage.instance.ref().child(
-               'uploads/$docId/$fileName');
-           UploadTask uploadTask = ref.putData(file.bytes!);
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        double progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        fileProvider.uploadProgress.value = ((i + progress / 100) / totalFiles) * 100;
+      });
 
-           uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-             double progress = (snapshot.bytesTransferred /
-                 snapshot.totalBytes) * 100;
-             fileProvider.uploadProgress.value = progress;
-           });
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      fileUrls.add(downloadUrl);
+    }
 
-           TaskSnapshot snapshot = await uploadTask;
-           String downloadUrl = await snapshot.ref.getDownloadURL();
-           fileUrls.add(downloadUrl);
+    return fileUrls;
+  }
+  Future<void> saveProjectToFirestore(String docId, String projectName, String deadline,
+      String message, List<String> fileUrls, String? name, Map<String, dynamic> selectedData) async {
+    await FirebaseFirestore.instance.collection('Projects').doc(docId).set({
+      'projectName': projectName,
+      'id': docId,
+      'userId': FirebaseAuth.instance.currentUser!.uid,
+      'deadLine': DateTime.parse(deadline.trim()),
+      'startDate': DateTime.now(),
+      'message': message,
+      'fileUrls': fileUrls,
+      'status': 'Requirements Submitted',
+      'price': '',
+      'customerName': name ?? '',
+      'category': selectedData,
+      'paid': false,
+      'adminComplete': false,
+      'adminMessage': '',
+      'adminMessageOnComplete': '',
+      'assigned': false,
+      'assignedTo': '',
+      'assigneeName': ''
+    });
 
-           uploadedFiles++;
-           fileProvider.uploadProgress.value =
-               (uploadedFiles / totalFiles) * 100;
-         }
-       }
-       else {
-         // For mobile
-         for (var file in fileProvider.files) {
-           String fileName = file.path
-               .split('/')
-               .last;
-           var ref = FirebaseStorage.instance.ref().child(
-               'uploads/$docId/$fileName');
-           UploadTask uploadTask = ref.putFile(file);
+    await FirestoreService().setNotifications('admin', 'New Projects Created', '$name has created a new project.', docId);
+  }
 
-           uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-             double progress = (snapshot.bytesTransferred /
-                 snapshot.totalBytes) * 100;
-             fileProvider.uploadProgress.value = progress;
-           });
-
-           TaskSnapshot snapshot = await uploadTask;
-           String downloadUrl = await snapshot.ref.getDownloadURL();
-           fileUrls.add(downloadUrl);
-
-           uploadedFiles++;
-           fileProvider.uploadProgress.value =
-               (uploadedFiles / totalFiles) * 100;
-         }
-       }
-       final selectedData = categoryProvider.getSelectedCategoriesWithSubcategories();
-
-       // Save project details along with file URLs in Firestore
-       await FirebaseFirestore.instance.collection('Projects').doc(docId).set({
-         'projectName': projectName,
-         'id': docId,
-         'userId': FirebaseAuth.instance.currentUser!.uid,
-         'deadLine': DateTime.parse(deadline.trim()),
-         'startDate': DateTime.now(),
-         'message': message,
-         'fileUrls': fileUrls,
-         'status': 'Project Submitted',
-         'price': '',
-         'customerName': name ?? '',
-         'category': selectedData,
-         'paid': false,
-         'adminComplete': false,
-         'adminMessage': '',
-         'adminMessageOnComplete': '',
-         'assigned': false,
-         'assignedTo': '',
-         'assigneeName':''
-
-
-       }).then((value) {
-         FirestoreService().setNotifications('admin', 'New Projects Created', '$name has created a new project.', docId);
-
-       });
-
-       Navigator.of(context).pop(); // Close the dialog
-       fileProvider.clearAll();
-       showCustomDialog(context);
-       Provider.of<CategoryProvider>(context, listen: false).resetSelections();
-
-     } catch (error) {
-       Navigator.of(context).pop(); // Close the dialog in case of error
-       Utils.toastMessage(error.toString());
-     }
-   }
-   else if(!kIsWeb && fileProvider.files.isNotEmpty ){
-     try {
-       int totalFiles = kIsWeb ? fileProvider.webFiles.length : fileProvider
-           .files.length;
-       int uploadedFiles = 0;
-
-       // Show the progress dialog
-       showDialog(
-         context: context,
-         barrierDismissible: false,
-         builder: (context) {
-           return AlertDialog(
-             content: Column(
-               mainAxisSize: MainAxisSize.min,
-               children: [
-                 ValueListenableBuilder<double>(
-                   valueListenable: fileProvider.uploadProgress,
-                   builder: (context, progress, child) {
-                     return Column(
-                       children: [
-                         CircularProgressIndicator(value: progress / 100),
-                         SizedBox(height: 20),
-                         Text('${progress.toStringAsFixed(2)}% uploaded'),
-                       ],
-                     );
-                   },
-                 ),
-               ],
-             ),
-           );
-         },
-       );
-
-       if (kIsWeb) {
-         // For web
-         for (var file in fileProvider.webFiles) {
-           String fileName = file.name;
-           var ref = FirebaseStorage.instance.ref().child(
-               'uploads/$docId/$fileName');
-           UploadTask uploadTask = ref.putData(file.bytes!);
-
-           uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-             double progress = (snapshot.bytesTransferred /
-                 snapshot.totalBytes) * 100;
-             fileProvider.uploadProgress.value = progress;
-           });
-
-           TaskSnapshot snapshot = await uploadTask;
-           String downloadUrl = await snapshot.ref.getDownloadURL();
-           fileUrls.add(downloadUrl);
-
-           uploadedFiles++;
-           fileProvider.uploadProgress.value =
-               (uploadedFiles / totalFiles) * 100;
-         }
-       } else {
-         // For mobile
-         for (var file in fileProvider.files) {
-           String fileName = file.path
-               .split('/')
-               .last;
-           var ref = FirebaseStorage.instance.ref().child(
-               'uploads/$docId/$fileName');
-           UploadTask uploadTask = ref.putFile(file);
-
-           uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-             double progress = (snapshot.bytesTransferred /
-                 snapshot.totalBytes) * 100;
-             fileProvider.uploadProgress.value = progress;
-           });
-
-           TaskSnapshot snapshot = await uploadTask;
-           String downloadUrl = await snapshot.ref.getDownloadURL();
-           fileUrls.add(downloadUrl);
-
-           uploadedFiles++;
-           fileProvider.uploadProgress.value =
-               (uploadedFiles / totalFiles) * 100;
-         }
-       }
-       final selectedData = categoryProvider.getSelectedCategoriesWithSubcategories();
-
-       // Save project details along with file URLs in Firestore
-       await FirebaseFirestore.instance.collection('Projects').doc(docId).set({
-         'projectName': projectName,
-         'id': docId,
-         'userId': FirebaseAuth.instance.currentUser!.uid,
-         'deadLine': DateTime.parse(deadline.trim()),
-         'startDate': DateTime.now(),
-         'message': message,
-         'fileUrls': fileUrls,
-         'status': 'Project Submitted',
-         'price': '',
-         'customerName': name ?? '',
-         'category': selectedData,
-         'paid': false,
-         'adminComplete': false,
-         'adminMessage': '',
-         'adminMessageOnComplete': '',
-         'assigned': false,
-         'assignedTo': '',
-         'assigneeName':''
-
-       }).then((value) {
-         FirestoreService().setNotifications('admin', 'New Projects Created', '$name has created a new project.',docId);
-       });
-
-       Navigator.of(context).pop(); // Close the dialog
-       fileProvider.clearAll();
-       showCustomDialog(context);
-       Provider.of<CategoryProvider>(context, listen: false).resetSelections();
-
-     } catch (error) {
-       Navigator.of(context).pop(); // Close the dialog in case of error
-       Utils.toastMessage(error.toString());
-     }
-   }
-   else{
-     Utils.toastMessage('Please add at least 1 file.');
-   }
+  void showUploadProgressDialog(BuildContext context, FilePickerProvider fileProvider) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ValueListenableBuilder<double>(
+              valueListenable: fileProvider.uploadProgress,
+              builder: (context, progress, child) => Column(
+                children: [
+                  CircularProgressIndicator(value: progress / 100),
+                  SizedBox(height: 20),
+                  Text('${progress.toStringAsFixed(2)}% uploaded'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   void _showModalBottomSheet(BuildContext context, String categoryKey, dynamic subcategories) {
     showModalBottomSheet(
@@ -816,5 +708,90 @@ class _CreateProjectViewState extends State<CreateProjectView> {
         );
       },
     );
+  }
+
+  // void updateProject(BuildContext context, String projectId, String projectName, String deadline,
+  //     String message, Map<String, dynamic> categories, List<File> newFiles) async {
+  //   final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+  //   final loadingProvider = Provider.of<LoaderViewProvider>(context, listen: false);
+  //
+  //   try {
+  //     loadingProvider.changeShowLoaderValue(true);
+  //     showUploadProgressDialog(context, fileProvider);
+  //
+  //     // Upload new files if any
+  //     List<String> newFileUrls = [];
+  //     if (newFiles.isNotEmpty) {
+  //       newFileUrls = await uploadFiles(projectId, fileProvider);
+  //     }
+  //
+  //     // Fetch existing project data
+  //     DocumentSnapshot projectDoc = await FirebaseFirestore.instance.collection('Projects').doc(projectId).get();
+  //     Map<String, dynamic> existingData = projectDoc.data() as Map<String, dynamic>;
+  //
+  //     // Merge new file URLs with existing ones
+  //     List<String> updatedFileUrls = [...existingData['fileUrls'], ...newFileUrls];
+  //
+  //     // Update project in Firestore
+  //     await FirebaseFirestore.instance.collection('Projects').doc(projectId).update({
+  //       'projectName': projectName,
+  //       'deadLine': DateTime.parse(deadline.trim()),
+  //       'message': message,
+  //       'category': categories,
+  //       // 'fileUrls': updatedFileUrls,
+  //     });
+  //     loadingProvider.changeShowLoaderValue(false);
+  //     fileProvider.clearAll();
+  //     Utils.toastMessage('Project updated successfully');
+  //   } catch (error) {
+  //     loadingProvider.changeShowLoaderValue(false);
+  //     Utils.toastMessage(error.toString());
+  //   }
+  // }
+
+  Future<void> updateProject(BuildContext context, String projectId, String projectName, String deadline,
+      String message, Map<String, dynamic> categories) async {
+    final fileProvider = Provider.of<FilePickerProvider>(context, listen: false);
+    final loadingProvider = Provider.of<LoaderViewProvider>(context, listen: false);
+
+    try {
+      loadingProvider.changeShowLoaderValue(true);
+      showUploadProgressDialog(context, fileProvider);
+
+      // Upload new files if any
+      List<String> newFileUrls = [];
+      if (kIsWeb) {
+        if (fileProvider.webFiles.isNotEmpty) {
+          newFileUrls = await uploadFiles(projectId, fileProvider);
+        }
+      } else {
+        if (fileProvider.files.isNotEmpty) {
+          newFileUrls = await uploadFiles(projectId, fileProvider);
+        }
+      }
+
+      // Merge new file URLs with existing ones
+      List<String> updatedFileUrls = [...fileProvider.existingFileUrls, ...newFileUrls];
+
+      // Update project in Firestore
+      await FirebaseFirestore.instance.collection('Projects').doc(projectId).update({
+        'projectName': projectName,
+        'deadLine': DateTime.parse(deadline.trim()),
+        'message': message,
+        'category': categories,
+        'fileUrls': updatedFileUrls,
+        'status': 'Requirements Submitted',
+        'price': '',
+      });
+
+      loadingProvider.changeShowLoaderValue(false);
+      fileProvider.clearAll();
+      Utils.toastMessage('Project updated successfully');
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> HomeView()));
+    } catch (error) {
+      print(error.toString());
+      loadingProvider.changeShowLoaderValue(false);
+      Utils.toastMessage(error.toString());
+    }
   }
 }

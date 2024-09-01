@@ -1,3 +1,4 @@
+
 import 'package:benchmark_estimate/view/project_status/wait_for_delivery.dart';
 import 'package:benchmark_estimate/view/project_status/wait_for_quote.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -107,7 +108,7 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                             Column(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                               projectData['status'] == 'Project Submitted'?
+                                projectData['status'] == 'Requirements Submitted'?
                                 AnimatedBuilder(
                                   animation: _controller,
                                   builder: (context, child) {
@@ -122,7 +123,7 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                                     );
                                   },
                                 ):
-                               SvgPicture.asset(statusComplete),
+                                SvgPicture.asset(statusComplete),
                                 SizedBox(height: MySize.size30),
                                 const Text('Project Submitted',
                                     style: AppTextStyles.label12600B),
@@ -130,17 +131,17 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                             ),
                             InkWell(
                               onTap:(){
-                                if(projectData['status'] != 'Project Submitted'){
+                                if(projectData['status'] != 'Requirements Submitted'){
                                   Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> WaitForQuoteView(docId: projectData['id'], price: projectData['price'], userId: projectData['userId'],
-                                      userName: projectData['customerName'], projectName: projectData['projectName'], message: message, date: projectData['deadLine'], categories: data, paid: projectData['paid'],)));
+                                    userName: projectData['customerName'], projectName: projectData['projectName'], message: message, date: projectData['deadLine'], categories: data, paid: projectData['paid'],files: projectData['fileUrls'],)));
                                 }
                               },
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  projectData['status'] == 'Project Submitted'?
+                                  projectData['status'] == 'Requirements Submitted'?
                                   SvgPicture.asset(statusZero):
-                                  projectData['status'] == 'Wait for quote'?
+                                  projectData['status'] == 'Quote Submitted'?
                                   AnimatedBuilder(
                                     animation: _controller,
                                     builder: (context, child) {
@@ -155,7 +156,7 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                                       );
                                     },
                                   ):
-                                  projectData['status'] == 'Wait for delivery' ||  projectData['status'] == 'Completed'?
+                                  projectData['status'] == 'Project Started' ||  projectData['status'] == 'Completed'?
                                   SvgPicture.asset(statusComplete):
                                   SvgPicture.asset(statusComplete),
                                   // SvgPicture.asset(statusZero),
@@ -167,18 +168,18 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                             ),
                             InkWell(
                               onTap:(){
-                                if(projectData['status'] == 'Wait for delivery'|| projectData['status'] == 'Completed'){
+                                if(projectData['status'] == 'Project Started'|| projectData['status'] == 'Completed'){
                                   Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> WaitForDeliveryView(docId: projectData['id'],)));
                                 }
                               },
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  projectData['status'] == 'Project Submitted'?
+                                  projectData['status'] == 'Requirements Submitted'?
                                   SvgPicture.asset(statusZero):
-                                  projectData['status'] == 'Wait for quote'?
+                                  projectData['status'] == 'Quote Submitted'?
                                   SvgPicture.asset(statusZero) :
-                                  projectData['status'] == 'Wait for delivery' ?
+                                  projectData['status'] == 'Project Started' ?
                                   AnimatedBuilder(
                                     animation: _controller,
                                     builder: (context, child) {
@@ -340,7 +341,7 @@ class _ProjectSubmittedViewState extends State<ProjectSubmittedView>
                         ],
                       );
                     }),
-                    
+
                   ],
                 ),
               ),
